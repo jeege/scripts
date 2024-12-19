@@ -174,7 +174,8 @@ const Fanqie = (function(){
         return arr
     }
 
-    function base64Ua(str, mode = 's3') {
+    function base64Ua(str, mode) {
+        mode = mode || 's3'
         const key = { s0: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
             s1 : "Dkdpgh4ZKsQB80/Mfvw36XI1R25+WUAlEi7NLboqYTOPuzmFjJnryx9HVGcaStCe=",
             s2: "Dkdpgh4ZKsQB80/Mfvw36XI1R25-WUAlEi7NLboqYTOPuzmFjJnryx9HVGcaStCe=",
