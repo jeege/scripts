@@ -159,13 +159,14 @@ const Fanqie = (function(){
         for (let i = 0; i < 256; i++) {
             const c = lm1.charCodeAt(i % lm1.length)
             _i = _i + arr[i] + c
+            let tmp = ''
             if (_i < 256) {
-                const tmp = arr[_i]
+                tmp = arr[_i]
                 arr[_i] = arr[i]
                 arr[i] = tmp
             } else {
                 _i = _i % 256
-                const tmp = arr[_i]
+                tmp = arr[_i]
                 arr[_i] = arr[i]
                 arr[i] = tmp
             }
