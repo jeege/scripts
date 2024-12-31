@@ -314,5 +314,8 @@ function fqGetContentUrl(itemId) {
     let token = fqUtil.getToken()
     let ua = fqUtil.headers["User-Agent"]
     let params = `itemId=${itemId}&msToken=${decodeURIComponent(token)}`
+    // return fetch(`https://fanqienovel.com/api/reader/full?${params}&a_bogus=${fqUtil.getABogus(params, ua)}`, {
+    //     headers: fqUtil.headers,
+    // }).then(res =>res.json()).then(res => {console.log(res.data.chapterData.content)})
     return `https://fanqienovel.com/api/reader/full?${params},${JSON.stringify({headers: fqUtil.headers, js: "result + '&a_bogus='+fqUtil.getABogus('" + params + "', '" + ua + "')"})}`
 }
