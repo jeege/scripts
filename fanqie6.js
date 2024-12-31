@@ -347,16 +347,16 @@ function fqGetCategoryList(gender) {
 function fqGetContent(itemId) {
     let { java } = this
     function getContent() {
-    let token = fqUtil.getToken()
-    let headers = fqUtil.getRandomHeaders()
-    let ua = headers["User-Agent"]
-    let params = `itemId=${itemId}&msToken=${decodeURIComponent(token)}`
-    let res = java.ajax(`https://fanqienovel.com/api/reader/full?${params},${JSON.stringify({headers: headers, js: "result + '&a_bogus='+fqUtil.getABogus('" + params + "', '" + ua + "')"})}`)
-    try {
-        return fqUtil.replaceImg(JSON.parse(fqUtil.decodeContent(res)).data.chapterData.content)
-    } catch (err) {
-        return ""
-    }
+        let token = fqUtil.getToken()
+        let headers = fqUtil.getRandomHeaders()
+        let ua = headers["User-Agent"]
+        let params = `itemId=${itemId}&msToken=${decodeURIComponent(token)}`
+        let res = java.ajax(`https://fanqienovel.com/api/reader/full?${params},${JSON.stringify({headers: headers, js: "result + '&a_bogus='+fqUtil.getABogus('" + params + "', '" + ua + "')"})}`)
+        try {
+            return fqUtil.replaceImg(JSON.parse(fqUtil.decodeContent(String(res))).data.chapterData.content)
+        } catch (err) {
+            return ""
+        }
     }
     while(true) {
         let res = getContent()
