@@ -77,27 +77,26 @@
         }
     }
 
+    // 保存当前语音识别的停止函数
+    var currentVoiceStop = null;
 
-    // 检测浏览器 Web Speech API 支持情况
     function hasWebSpeech() {
         return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
     }
 
-    // 获取 Web Speech API 构造函数
     function getWebSpeechRecognition() {
         return window.SpeechRecognition || window.webkitSpeechRecognition;
     }
 
-
     /**
      * 启动语音输入
      * @param {Object} options
-     * @param {string} [options.lang='zh-CN'] - 识别语言，如 'en-US'、'zh-CN'
-     * @param {Function} [options.onStart] - 开始识别时的回调
-     * @param {Function} [options.onResult] - 识别成功回调，参数为识别文本
-     * @param {Function} [options.onError] - 识别出错回调，参数为错误信息
-     * @param {Function} [options.onEnd] - 识别结束时的回调
-     * @returns {Promise<string>} - 识别结果文本
+     * @param {string} [options.lang='zh-CN']
+     * @param {Function} [options.onStart]
+     * @param {Function} [options.onResult]
+     * @param {Function} [options.onError]
+     * @param {Function} [options.onEnd]
+     * @returns {Promise<string>}
      */
     async function startVoiceInput(options) {
         options = options || {};
@@ -107,34 +106,51 @@
         var onError = options.onError || function () { };
         var onEnd = options.onEnd || function () { };
 
-        // ===== AnkiDroid：使用原生 STT API =====
+        // 如果已有正在进行的识别，先停止
+        if (currentVoiceStop) {
+            try { currentVoiceStop(); } catch (e) { }
+            currentVoiceStop = null;
+        }
+
+        // ===== AnkiDroid 原生 STT =====
         if (PLATFORM === 'AnkiDroid') {
             try {
                 onStart();
+                if (api.ankiSttSetLanguage) {
+                    await api.ankiSttSetLanguage(lang);
+                }
 
-                // 设置识别语言
-                await api.ankiSttSetLanguage(lang);
+                // 保存停止函数：尝试调用 AnkiDroid 可能提供的停止方法
+                currentVoiceStop = function () {
+                    try {
+                        if (api.ankiSttStop) {
+                            api.ankiSttStop();
+                        } else if (api.ankiSttCancel) {
+                            api.ankiSttCancel();
+                        } else if (api.ankiSttStopListening) {
+                            api.ankiSttStopListening();
+                        }
+                    } catch (e) { /* 忽略 */ }
+                };
 
-                // 启动识别，返回 Promise<string>
                 var text = await api.ankiSttStart();
-
-                // 如果返回空字符串，说明用户取消或未识别到
                 if (text && text.trim()) {
                     onResult(text.trim());
                 } else {
                     onError('未识别到语音，请重试。');
                 }
-
                 onEnd();
+                currentVoiceStop = null;
                 return text;
             } catch (err) {
                 onError('AnkiDroid 语音识别失败：' + (err.message || err));
                 onEnd();
+                currentVoiceStop = null;
                 return '';
             }
         }
 
-        // ===== 其他平台：使用 Web Speech API =====
+        // ===== Web Speech API =====
         if (hasWebSpeech()) {
             return new Promise(function (resolve, reject) {
                 var SpeechRecognition = getWebSpeechRecognition();
@@ -144,6 +160,13 @@
                 recognition.interimResults = false;
                 recognition.maxAlternatives = 1;
 
+                // 保存停止函数
+                currentVoiceStop = function () {
+                    try { recognition.stop(); } catch (e) { }
+                    try { recognition.abort(); } catch (e) { }
+                    currentVoiceStop = null;
+                };
+
                 recognition.onstart = function () {
                     onStart();
                 };
@@ -151,29 +174,41 @@
                 recognition.onresult = function (event) {
                     var transcript = event.results[0][0].transcript;
                     onResult(transcript);
+                    currentVoiceStop = null;
                     resolve(transcript);
                 };
 
                 recognition.onerror = function (event) {
                     onError('Web Speech 识别出错：' + event.error);
+                    currentVoiceStop = null;
                     reject(event.error);
                 };
 
                 recognition.onend = function () {
                     onEnd();
+                    currentVoiceStop = null;
                 };
 
                 recognition.start();
             });
         }
 
-        // ===== 不支持语音识别的平台 =====
+        // ===== 不支持 =====
         var msg = '当前平台不支持语音识别。AnkiDroid 请使用系统键盘的语音输入，其他平台请使用 Chrome/Edge/Safari。';
         onError(msg);
         onEnd();
         return '';
     }
 
+    /**
+     * 停止当前语音输入
+     */
+    function stopVoiceInput() {
+        if (currentVoiceStop) {
+            try { currentVoiceStop(); } catch (e) { }
+            currentVoiceStop = null;
+        }
+    }
 
     window.ankiUtil = {
         api: api,
@@ -194,6 +229,7 @@
         speak: speak,
         stopSpeak: stopSpeak,
         hasVoiceInput: hasWebSpeech() || PLATFORM === 'AnkiDroid',
-        startVoiceInput: startVoiceInput
+        startVoiceInput: startVoiceInput,
+        stopVoiceInput: stopVoiceInput
     };
 })();
