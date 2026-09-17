@@ -134,6 +134,7 @@
                 };
 
                 var text = await api.ankiSttStart();
+                console.log(text);
                 if (text && text.trim()) {
                     onResult(text.trim());
                 } else {
