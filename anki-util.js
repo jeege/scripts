@@ -47,7 +47,7 @@
         }
     }
 
-    async function stopSpeek() {
+    async function stopSpeak() {
         if (PLATFORM === "AnkiDroid") {
             await api.ankiTtsStop()
         } else if (('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window)){
@@ -56,19 +56,21 @@
         }
     }
 
-    async function speek(text) {
-        await stopSpeek();
+    async function speak(text, rate) {
+        await stopSpeak();
         let lang = "en_US"
         if (/[\u4e00-\u9fa5]/.test(text)) {
             lang = "zh_CN"
         }
         if (PLATFORM === "AnkiDroid") {
             await api.ankiTtsSetLanguage(lang)
+            await api.ankiTtsSetSpeechRate(rate)
             await api.ankiTtsSpeak(text)
         } else if (('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window)){
             const synth = window.speechSynthesis;
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = lang;
+            utterance.rate = rate;
             const voices = synth.getVoices();
             utterance.voice = voices.find(voice => voice.lang === lang);
             synth.speak(utterance);
@@ -77,6 +79,7 @@
 
 
     window.ankiUtil = {
+        api: api,
         PLATFORM: PLATFORM,
         isAnkiMobile: function () {
             return PLATFORM === "AnkiMobile";
@@ -91,8 +94,8 @@
             return PLATFORM === "AnkiDesktop";
         },
         showAnswer: showAnswer,
-        speek: speek,
-        stopSpeek: stopSpeek
+        speak: speak,
+        stopSpeak: stopSpeak
     };
 })();
 
