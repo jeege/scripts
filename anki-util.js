@@ -47,7 +47,17 @@
         }
     }
 
+    async function stopSpeek() {
+        if (PLATFORM === "AnkiDroid") {
+            await api.ankiTtsStop()
+        } else if (('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window)){
+            const synth = window.speechSynthesis;
+            synth.cancel();
+        }
+    }
+
     async function speek(text) {
+        await stopSpeek();
         let lang = "en_US"
         if (/[\u4e00-\u9fa5]/.test(text)) {
             lang = "zh_CN"
@@ -81,7 +91,8 @@
             return PLATFORM === "AnkiDesktop";
         },
         showAnswer: showAnswer,
-        speek: speek
+        speek: speek,
+        stopSpeek: stopSpeek
     };
 })();
 
